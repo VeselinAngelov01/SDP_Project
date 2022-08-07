@@ -75,7 +75,7 @@ public:
     std::string getNodeExpr(size_t row, size_t column) const;
     //Returns cell's value
     double getNodeValue(size_t  row, size_t column) const;
-    //Print function(type = true -> print expr| type = fakse -> print value)
+    //Print function(type = true -> print expr| type = false -> print value)
     std::string print(bool type) const;
     //Returns all table cells saved in string ('save' command helper)
     std::string exportString() const;
