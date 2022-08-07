@@ -14,7 +14,8 @@ if        		13
 */
 
 // Variable for print function
-const unsigned int DOUBLE_SIZE = 8;
+// 8 + 2 for ""
+const size_t DOUBLE_SIZE = 10;
 
 Tree::Tree()
 {
@@ -129,10 +130,10 @@ int Tree::height(Node *node)
 Node *Tree::rightRotate(Node *node)
 {
 	Node *temp = node->left;
-	Node *T2 = temp->right;
+	Node *TR = temp->right;
 
 	temp->right = node;
-	node->left = T2;
+	node->left = TR;
 
 	node->height = max(height(node->left), height(node->right)) + 1;
 	temp->height = max(height(temp->left), height(temp->right)) + 1;
@@ -143,10 +144,10 @@ Node *Tree::rightRotate(Node *node)
 Node *Tree::leftRotate(Node *node)
 {
 	Node *temp = node->right;
-	Node *T2 = temp->left;
+	Node *TR = temp->left;
 
 	temp->left = node;
-	node->right = T2;
+	node->right = TR;
 
 	node->height = max(height(node->left), height(node->right)) + 1;
 	temp->height = max(height(temp->left), height(temp->right)) + 1;
@@ -651,7 +652,7 @@ void Tree::addSpaces(std::string &data, size_t count) const
 std::string Tree::print(bool type) const
 {
 	std::string data;
-	size_t MAX_SIZE = max_length > DOUBLE_SIZE ? max_length : DOUBLE_SIZE;
+	size_t MAX_SIZE = max_length > DOUBLE_SIZE ? max_length + 2 : DOUBLE_SIZE;
 	std::string temp;
 	// Start from 0 to max_row
 	for (size_t i = 0; i <= max_row; ++i)
@@ -669,7 +670,7 @@ std::string Tree::print(bool type) const
 				if (type)
 				{
 					data += "\"" + temp + "\"";
-					addSpaces(data, MAX_SIZE > temp.length() + 2 ? MAX_SIZE - temp.length() - 2 : temp.length() + 2 - MAX_SIZE);
+					addSpaces(data, MAX_SIZE > temp.length() + 2 ? MAX_SIZE - temp.length() - 2 : 0);
 				}
 				else
 				{
@@ -677,14 +678,14 @@ std::string Tree::print(bool type) const
 					if (temp[0] == '=')
 					{
 						std::string calculated = std::to_string(toRPN(temp, i, j));
-						data += ('"' + calculated +'"');
-						addSpaces(data, MAX_SIZE > calculated.length() ? MAX_SIZE - calculated.length() : 0);
+						data += ('"' + calculated + '"');
+						addSpaces(data, MAX_SIZE > calculated.length() + 2 ? MAX_SIZE - calculated.length() - 2 : 0);
 					}
 					// Else if it is string
 					else
 					{
 						data += "\"" + temp + "\"";
-						addSpaces(data, MAX_SIZE > temp.length() + 2 ? MAX_SIZE - temp.length() - 2 : temp.length() + 2 - MAX_SIZE);
+						addSpaces(data, MAX_SIZE > temp.length() + 2 ? MAX_SIZE - temp.length() - 2 : 0);
 					}
 				}
 			}
@@ -714,8 +715,10 @@ void Tree::traversal(Node *node, std::string &data, size_t &row, size_t &column)
 		if (row == node->value.getRow() && column == node->value.getColumn())
 		{
 			std::string res;
-			if(node->value.getData()[0]=='=') res = node->value.getData();
-			else res = '"' + node->value.getData() + '"';
+			if (node->value.getData()[0] == '=')
+				res = node->value.getData();
+			else
+				res = '"' + node->value.getData() + '"';
 			data += res;
 			// If cell is not in last column add deldimiter
 			if (node->value.getColumn() != max_column)
@@ -751,21 +754,6 @@ std::string Tree::exportString() const
 	std::string data;
 	size_t row = 0, column = 0;
 	traversal(root, data, row, column);
-	/* If we have empty rows
-	while (row < max_row)
-	{
-		if (column >= max_column)
-		{
-			row++;
-			data += '\n';
-			column = 0;
-		}
-		else
-		{
-			data += ';';
-			column++;
-		}
-	}*/
 	return data;
 }
 
@@ -784,10 +772,12 @@ void Tree::change(size_t row, size_t column, bool increase)
 	{
 		try
 		{
-			//Try to convert to number
+			// Try to convert to number
 			double value = std::stod(data);
-			if(increase) ++value;
-			else --value;
+			if (increase)
+				++value;
+			else
+				--value;
 			data = std::to_string(value);
 			find(this->root, row, column)->value.setData(data);
 		}

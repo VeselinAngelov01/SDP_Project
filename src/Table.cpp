@@ -1,44 +1,41 @@
 #include "Table.h"
 
 // Function to validate formula (regex)
-void checkFormulaSyntax(const std::string &data)
+void checkFormulaSyntax(std::string &data)
 {
-	std::string regexCheck = "=(not\\(*(-?[1-9][0-9]*|R[0-9]+C[0-9]+|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*|\\(*(-?[0-9]*|R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*(\\(*[+/*-](-?[0-9]*|-?R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*)+|if\\(+((\\(*(-?[0-9]*|R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*(\\(*[+/*-](-?[0-9]*|-?R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*)*)(<|>|!=|==)(\\(*(-?[0-9]*|R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*(\\(*[+/*-](-?[0-9]*|-?R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*)*)+((and|or)(\\(*(-?[0-9]*|R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*(\\(*[+/*-](-?[0-9]*|-?R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*)*)(<|>|!=|==)(\\(*(-?[0-9]*|R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*(\\(*[+/*-](-?[0-9]*|-?R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*)*)+)*|not\\(*(-?[1-9][0-9]*|R[0-9]+C[0-9]+|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])\\)*),\\(*(-?[0-9]*|R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])+\\)*,\\(*(-?[0-9]*|R[0-9]*C[0-9]*|R\\[-?[0-9]*\\]C\\[-?[0-9]*\\])+\\)*\\)+)+";
-	std::regex check(regexCheck);
-	if (std::regex_match(data, check))
+	int index = 0;
+	size_t size = data.length();
+	int open = 0;
+	while (index < size)
 	{
-		int index = 0;
-		size_t size = data.length();
-		int open = 0;
-		while (index < size)
-		{
-			if (open < 0)
-				throw std::invalid_argument("Invalid brackets!");
-			else if (data[index] == '(')
-				open++;
-			else if (data[index] == ')')
-				open--;
-			index++;
-		}
-		if (open != 0)
+		if (open < 0)
 			throw std::invalid_argument("Invalid brackets!");
+		else if (data[index] == '(')
+			open++;
+		else if (data[index] == ')')
+			open--;
+		index++;
 	}
-	else
-		throw std::invalid_argument("Invalid value!");
+	if (open != 0)
+		throw std::invalid_argument("Invalid brackets!");
 }
 
 // Correct data inserted - string/formula/error
-void Validate(const std::string &data, unsigned int row, unsigned int column)
+void Validate(std::string &data, unsigned int row, unsigned int column)
 {
 	if (data.length() == 0 || (data[0] == '"' && data[data.length() - 1] == '"'))
 	{
-		// text
+		data.erase(0, 1);
+		data.erase(data.length() - 1);
 		return;
 	}
 	else if (data[0] == '=' && data.length() > 1)
-	{
-		// formula
 		checkFormulaSyntax(data);
+	// "NULL" means that user wants to delete content in cell
+	else if (data == "NULL")
+	{
+		data = "";
+		return;
 	}
 	else
 		throw std::invalid_argument("Invalid value in set function!");
@@ -133,7 +130,7 @@ void Table::set(size_t row, size_t column, std::string &data)
 {
 	try
 	{
-		// Validate(data, row, column); // TO DO
+		Validate(data, row, column);
 		table->insert(row, column, data);
 	}
 	catch (const std::exception &e)
@@ -176,11 +173,6 @@ void Table::setFromFile(std::string line, size_t currentRow, size_t &currentColu
 			// Cell can be empty
 			if (value.length() > 0)
 			{
-				if (value[0] != '=')
-				{
-					value.erase(value.length() - 1);
-					value.erase(0, 1);
-				}
 				set(currentRow, currentColumn, value);
 			}
 			break;
@@ -193,12 +185,6 @@ void Table::setFromFile(std::string line, size_t currentRow, size_t &currentColu
 			// Cell can be empty
 			if (value.length() > 0)
 			{
-				// If text remove '\"'
-				if (value[0] != '=')
-				{
-					value.erase(value.length() - 1);
-					value.erase(0, 1);
-				}
 				set(currentRow, currentColumn, value);
 			}
 			startIndex = endIndex + 1;
